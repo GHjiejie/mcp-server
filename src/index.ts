@@ -1,60 +1,30 @@
 #!/usr/bin/env node
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import * as z from "zod/v4";
 
 // 创建 MCP server
-const server = new Server(
-  {
-    name: "my-mcp-server",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
-
-// 定义工具列表
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "add",
-        description: "将两个数字相加并返回结果",
-        inputSchema: {
-          type: "object",
-          properties: {
-            a: {
-              type: "number",
-              description: "第一个数字",
-            },
-            b: {
-              type: "number",
-              description: "第二个数字",
-            },
-          },
-          required: ["a", "b"],
-        },
-      },
-    ],
-  };
+const server = new McpServer({
+  name: "my-mcp-server",
+  version: "1.0.0",
 });
 
-// 处理工具调用
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name === "add") {
-    const { a, b } = request.params.arguments as { a: number; b: number };
-
-    if (typeof a !== "number" || typeof b !== "number") {
-      throw new Error("参数 a 和 b 必须是数字类型");
-    }
-
+// 注册加法工具
+server.registerTool(
+  "add",
+  {
+    title: "加法工具",
+    description: "将两个数字相加并返回结果",
+    inputSchema: {
+      a: z.number(),
+      b: z.number(),
+    },
+    outputSchema: {
+      result: z.number(),
+    },
+  },
+  async ({ a, b }) => {
     const result = a + b;
 
     return {
@@ -64,11 +34,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           text: `计算结果: ${a} + ${b} = ${result}`,
         },
       ],
+      structuredContent: { result },
     };
   }
-
-  throw new Error(`未知的工具: ${request.params.name}`);
-});
+);
 
 // 启动服务器
 async function main() {
