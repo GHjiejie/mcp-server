@@ -2,7 +2,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import * as z from "zod/v4";
+import { tools } from "./server/tools/index.js";
 
 // 创建 MCP server
 const server = new McpServer({
@@ -10,34 +10,19 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-// 注册加法工具
-server.registerTool(
-  "add",
-  {
-    title: "加法工具",
-    description: "将两个数字相加并返回结果",
-    inputSchema: {
-      a: z.number(),
-      b: z.number(),
+// 统一注册所有工具
+tools.forEach((tool) => {
+  server.registerTool(
+    tool.name,
+    {
+      title: tool.title,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+      outputSchema: tool.outputSchema,
     },
-    outputSchema: {
-      result: z.number(),
-    },
-  },
-  async ({ a, b }) => {
-    const result = a + b;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `计算结果: ${a} + ${b} = ${result}`,
-        },
-      ],
-      structuredContent: { result },
-    };
-  }
-);
+    tool.handler
+  );
+});
 
 // 启动服务器
 async function main() {
