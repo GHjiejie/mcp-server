@@ -3,6 +3,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { tools } from "./server/tools/index.js";
+import {
+  resources,
+  createFileTemplates,
+  fileResourceHandler,
+} from "./server/resource/index.js";
 
 // 创建 MCP server
 const server = new McpServer({
@@ -24,11 +29,39 @@ tools.forEach((tool) => {
   );
 });
 
+// 统一注册所有静态资源
+resources.forEach((resource) => {
+  server.registerResource(
+    resource.name,
+    resource.uri,
+    {
+      description: resource.description,
+      mimeType: resource.mimeType,
+    },
+    resource.handler
+  );
+});
+
 // 启动服务器
 async function main() {
+  // 动态创建并注册所有子目录的资源模板
+  const fileTemplates = await createFileTemplates();
+
+  fileTemplates.forEach(({ name, template }) => {
+    server.registerResource(
+      `${name} 资源`,
+      template,
+      {
+        description: `访问 ${name} 目录下的所有文件`,
+      },
+      fileResourceHandler
+    );
+  });
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("MCP 服务器已启动，等待连接...");
+  console.error(`已注册 ${fileTemplates.length} 个资源模板`);
 }
 
 main().catch((error) => {
