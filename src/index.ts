@@ -8,6 +8,7 @@ import {
   createFileTemplates,
   fileResourceHandler,
 } from "./server/resource/index.js";
+import { prompts } from "./server/prompts/index.js";
 
 // 创建 MCP server
 const server = new McpServer({
@@ -42,6 +43,18 @@ resources.forEach((resource) => {
   );
 });
 
+// 统一注册所有提示模板
+prompts.forEach((prompt) => {
+  server.registerPrompt(
+    prompt.name,
+    {
+      description: prompt.description,
+      argsSchema: prompt.argsSchema,
+    },
+    prompt.handler
+  );
+});
+
 // 启动服务器
 async function main() {
   // 动态创建并注册所有子目录的资源模板
@@ -61,6 +74,8 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("MCP 服务器已启动，等待连接...");
+  console.error(`已注册 ${tools.length} 个工具`);
+  console.error(`已注册 ${prompts.length} 个提示模板`);
   console.error(`已注册 ${fileTemplates.length} 个资源模板`);
 }
 

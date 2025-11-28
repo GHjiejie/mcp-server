@@ -20,7 +20,7 @@ async function getSubDirectories(dirPath: string): Promise<string[]> {
         dirs.push(path.join(dirPath, entry.name));
       }
     }
-    console.log("dirs", dirs);
+    console;
   } catch (error) {
     console.error(`读取目录失败: ${dirPath}`, error);
   }
