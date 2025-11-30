@@ -1,1 +1,1 @@
-npx @modelcontextprotocol/inspector node 
+npx @modelcontextprotocol/inspector node /Users/jie/Documents/Github/mcp-server/build/index.js
